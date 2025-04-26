@@ -1,13 +1,8 @@
 <script setup lang="ts">
 import { RouterLink, RouterView } from 'vue-router';
-import { ref, onMounted } from 'vue';
 import { AuthService } from '@/services/authService';
 
-const isAuthenticated = ref(false);
-
-onMounted(() => {
-  isAuthenticated.value = AuthService.hasAuth(); // Use AuthService to check authentication
-});
+const isAuthenticated = AuthService.isAuthenticated; // Use the reactive state directly
 </script>
 
 <template>
@@ -41,8 +36,12 @@ onMounted(() => {
               </RouterLink>
             </li>
             <li class="nav-item">
-              <RouterLink class="nav-link" to="/profile">
-                <i class="fa-solid fa-user"></i> My Profile
+              <RouterLink
+                class="nav-link"
+                :to="isAuthenticated ? '/profile' : '/signup'"
+              >
+                <i class="fa-solid fa-user"></i>
+                {{ isAuthenticated ? 'My Profile' : 'Register' }}
               </RouterLink>
             </li>
           </ul>
