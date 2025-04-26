@@ -2,6 +2,24 @@
 import { ref, computed, onMounted } from 'vue';
 import { useVehicleService } from '@/services/vehicleService';
 import type { Vehicle } from '@/models/vehicle.model';
+import BookView from './BookView.vue';
+import { AuthService } from '@/services/authService'; 
+
+const showBookingPopup = ref(false);
+const selectedCar = ref<Vehicle | null>(null);
+
+const openBookingPopup = (car: any) => {
+    if (!AuthService.hasAuth()) {
+    alert('You must register to book your dream car.');
+    return;
+  }
+  selectedCar.value = car;
+  showBookingPopup.value = true;
+};
+
+const closeBookingPopup = () => {
+  showBookingPopup.value = false;
+};
 
 const { vehicles, fetchVehicles } = useVehicleService();
 
@@ -200,11 +218,14 @@ onMounted(fetchVehicles);
         <img :src="vehicle.imagePath" :alt="vehicle.name" />
         <h3>{{ vehicle.name }}</h3>
         <p>{{ vehicle.price }}</p>
-        <button class="book-button">Book Now</button>
+ <button class="book-button" @click="openBookingPopup(vehicle)">Book Now</button>
         <button class="view-button" @click="$router.push({ name: 'car-details', params: { id: vehicle.vehicleId } })">
           View Details
         </button>
       </div>
+
+
+<BookView v-if="showBookingPopup" :car="selectedCar" @close="closeBookingPopup" />
     </div>
   </div>
 </template>
