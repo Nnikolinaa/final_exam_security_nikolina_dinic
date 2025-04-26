@@ -25,8 +25,26 @@ const paymentDetails = ref({
   bankAccountNumber: '',
   bankRoutingNumber: '',
   bankName: '',
-  transcationId: '',
+  transactionId: '',
 });
+
+const formatExpirationDate = (event: Event) => {
+  const input = event.target as HTMLInputElement;
+  let value = input.value.replace(/[^0-9]/g, ''); // Remove non-numeric characters
+
+  if (value.length > 2) {
+    value = value.slice(0, 2) + '/' + value.slice(2, 4); // Add slash after the first two digits
+  }
+
+  if (value.length > 5) {
+    value = value.slice(0, 5); // Restrict to 5 characters (MM/YY)
+  }
+
+  input.value = value; // Update the input field value
+  paymentDetails.value.expirationDate = value; // Update the v-model
+};
+
+const isProcessing = ref(false); // For transaction animation
 
 const fetchRentalDetails = async () => {
   try {
@@ -38,6 +56,8 @@ const fetchRentalDetails = async () => {
   }
 };
 
+const showSuccessModal = ref(false); // To control the visibility of the success modal
+
 const confirmPayment = async () => {
   if (!rentalDetails.value) {
     alert('No rental details available.');
@@ -46,8 +66,18 @@ const confirmPayment = async () => {
 
   // Validate fields based on payment method
   if (paymentDetails.value.paymentMethod === 'credit_card' || paymentDetails.value.paymentMethod === 'debit_card') {
-    if (!paymentDetails.value.cardNumber || !paymentDetails.value.cardHolder || !paymentDetails.value.expirationDate || !paymentDetails.value.cvv) {
-      alert('Please fill in all card details.');
+    const formattedExpirationDate = paymentDetails.value.expirationDate.replace('/', ''); // Remove the slash for validation
+
+    if (
+      !paymentDetails.value.cardNumber ||
+      paymentDetails.value.cardNumber.length !== 16 ||
+      !paymentDetails.value.cardHolder ||
+      !formattedExpirationDate ||
+      formattedExpirationDate.length !== 4 || // Validate MMYY format
+      !paymentDetails.value.cvv ||
+      paymentDetails.value.cvv.length !== 3
+    ) {
+      alert('Please fill in all card details correctly.');
       return;
     }
   } else if (paymentDetails.value.paymentMethod === 'paypal') {
@@ -63,20 +93,28 @@ const confirmPayment = async () => {
   }
 
   try {
+    isProcessing.value = true; // Start transaction animation
+
     const paymentData = {
       rentalId: rentalDetails.value.rentalId,
       userId: rentalDetails.value.userId,
       amount: rentalDetails.value.totalPrice,
       ...paymentDetails.value,
-      transactionId: paymentDetails.value.transcationId || `MOCK-${Date.now()}`,
+      expirationDate: paymentDetails.value.expirationDate.replace('/', ''), // Remove the slash before sending to the backend
+      transactionId: paymentDetails.value.transactionId || `MOCK-${Date.now()}`,
     };
 
     await MainService.useAxios('/payments/mock', 'post', paymentData);
-    alert('Payment confirmed successfully.');
-    router.push({ name: 'profile' }); // Navigate to MyProfileView
+
+    // Wait for 4 seconds before showing the success modal
+    setTimeout(() => {
+      isProcessing.value = false; // Stop transaction animation
+      showSuccessModal.value = true; // Show success modal
+    }, 4000); // 4 seconds delay
   } catch (error) {
     console.error('Failed to confirm payment:', error);
     alert('Failed to confirm payment. Please try again.');
+    isProcessing.value = false; // Stop transaction animation
   }
 };
 
@@ -114,6 +152,8 @@ onMounted(fetchRentalDetails);
           type="text"
           v-model="paymentDetails.cardNumber"
           placeholder="Enter card number"
+          maxlength="16"
+          oninput="this.value = this.value.replace(/[^0-9]/g, '')"
         />
 
         <div class="card-info">
@@ -124,6 +164,8 @@ onMounted(fetchRentalDetails);
               type="text"
               v-model="paymentDetails.expirationDate"
               placeholder="MM/YY"
+              maxlength="5"
+              @input="formatExpirationDate"
             />
           </div>
           <div>
@@ -133,60 +175,31 @@ onMounted(fetchRentalDetails);
               type="text"
               v-model="paymentDetails.cvv"
               placeholder="CVV"
+              maxlength="3"
+              oninput="this.value = this.value.replace(/[^0-9]/g, '')"
             />
           </div>
         </div>
       </div>
 
-      <!-- PayPal Fields -->
-      <div v-if="paymentDetails.paymentMethod === 'paypal'" class="paypal-details">
-        <label for="paypalEmail">PayPal Email</label>
-        <input
-          id="paypalEmail"
-          type="email"
-          v-model="paymentDetails.paypalEmail"
-          placeholder="Enter your PayPal email"
-        />
+      <!-- Transaction Animation -->
+      <div v-if="isProcessing" class="transaction-animation">
+        <p>Processing payment...</p>
+        <div class="spinner"></div>
       </div>
 
-      <!-- Bank Transfer Fields -->
-      <div v-if="paymentDetails.paymentMethod === 'bank_transfer'" class="bank-details">
-        <label for="bankName">Bank Name</label>
-        <input
-          id="bankName"
-          type="text"
-          v-model="paymentDetails.bankName"
-          placeholder="Enter bank name"
-        />
-
-        <label for="accountNumber">Account Number</label>
-        <input
-          id="accountNumber"
-          type="text"
-          v-model="paymentDetails.bankAccountNumber"
-          placeholder="Enter account number"
-        />
-
-        <label for="routingNumber">Routing Number</label>
-        <input
-          id="routingNumber"
-          type="text"
-          v-model="paymentDetails.bankRoutingNumber"
-          placeholder="Enter routing number"
-        />
-      </div>
-
-      <label for="transactionId">Transaction ID (Optional)</label>
-      <input
-        id="transactionId"
-        type="text"
-        v-model="paymentDetails.transcationId"
-        placeholder="Enter transaction ID"
-      />
-
-      <div class="modal-actions">
+      <div class="modal-actions" v-else>
         <button class="confirm-btn" @click="confirmPayment">Pay</button>
         <router-link to="/profile" class="cancel-btn">Cancel</router-link>
+      </div>
+    </div>
+
+    <!-- Success Modal -->
+    <div v-if="showSuccessModal" class="success-modal">
+      <div class="success-content">
+        <h2>Payment Successful!</h2>
+        <p>Your payment has been processed successfully.</p>
+        <button class="close-btn" @click="router.push({ name: 'profile' })">Go to Profile</button>
       </div>
     </div>
   </div>
@@ -269,5 +282,66 @@ onMounted(fetchRentalDetails);
   border-radius: 8px;
   text-decoration: none;
   text-align: center;
+}
+.transaction-animation {
+  text-align: center;
+  margin-top: 1rem;
+}
+
+.transaction-animation .spinner {
+  margin: 1rem auto;
+  width: 40px;
+  height: 40px;
+  border: 4px solid rgba(255, 255, 255, 0.3);
+  border-top: 4px solid #f39c12;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+.success-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.8);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.success-content {
+  background: #1e1e1e;
+  padding: 2rem;
+  border-radius: 12px;
+  text-align: center;
+  color: #ffffff;
+}
+
+.success-content h2 {
+  margin-bottom: 1rem;
+  color: #4caf50;
+}
+
+.success-content p {
+  margin-bottom: 1.5rem;
+}
+
+.close-btn {
+  background: #f39c12;
+  color: white;
+  padding: 0.8rem 1.5rem;
+  border-radius: 8px;
+  border: none;
+  cursor: pointer;
 }
 </style>
