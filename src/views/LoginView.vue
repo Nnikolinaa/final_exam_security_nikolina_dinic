@@ -20,14 +20,16 @@ const login = async () => {
       throw new Error('Invalid tokens or missing user data');
     }
 
-    // Store tokens using AuthService
-    AuthService.createAuth({ name, access, refresh });
-
-    // Decode the access token to verify its structure
-    const decodedToken: { id: number } = jwtDecode(access);
+    // Decode the access token to extract the user ID
+    const decodedToken: { id: number } = jwtDecode(access)
+;
     if (!decodedToken.id) {
       throw new Error('Invalid token payload');
     }
+
+    // Store tokens and user ID using AuthService
+    AuthService.createAuth({ name, access, refresh });
+    localStorage.setItem('userId', decodedToken.id.toString()); // Store the user ID
 
     console.log('Login successful, redirecting to About view...');
     router.push({ name: 'about' }); // Navigate to the "about" view
@@ -78,7 +80,7 @@ body {
   position: absolute;
   top: 0;
   left: 0;
-  background: url('@/assets/luxury-car.jpg') no-repeat center center/cover; /* Corrected path */
+  background: url('@/assets/luxury-car.jpg') no-repeat center center/cover; / Corrected path /
 }
 
 .overlay {
@@ -87,7 +89,7 @@ body {
   position: absolute;
   top: 0;
   left: 0;
-  background: rgba(0, 0, 0, 0.5); /* Add a dark overlay for better contrast */
+  background: rgba(0, 0, 0, 0.5); / Add a dark overlay for better contrast /
 }
 
 form {
