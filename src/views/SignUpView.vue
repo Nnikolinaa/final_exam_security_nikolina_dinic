@@ -20,7 +20,7 @@ const signUp = async () => {
       email: email.value,
       phone: phone.value,
       password: password.value,
-    });
+    }, false);
 
     const data = response.data as { userId: number }; // Define the expected structure of the response
     const { userId } = data; // Extract `userId` from the typed response
@@ -64,7 +64,7 @@ const signUp = async () => {
 </template>
 
 <style scoped>
-/* ...reuse styles from LoginView... */
+/ ...reuse styles from LoginView... /
 
 .login-prompt {
   margin-top: 20px;
@@ -100,7 +100,7 @@ body {
   position: absolute;
   top: 0;
   left: 0;
-  background: url('@/assets/luxury-car.jpg') no-repeat center center/cover; /* Corrected path */
+  background: url('@/assets/luxury-car.jpg') no-repeat center center/cover; / Corrected path /
 }
 
 .overlay {
@@ -109,7 +109,7 @@ body {
   position: absolute;
   top: 0;
   left: 0;
-  background: rgba(0, 0, 0, 0.5); /* Add a dark overlay for better contrast */
+  background: rgba(0, 0, 0, 0.5); / Add a dark overlay for better contrast /
 }
 
 form {
