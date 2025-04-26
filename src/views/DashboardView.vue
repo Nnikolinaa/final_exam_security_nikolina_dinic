@@ -4,7 +4,24 @@ import lamborghiniImage from '@/assets/lamborghini.jpg';
 import rollsRoyceImage from '@/assets/rolls-royce.jpg';
 import ferrariImage from '@/assets/ferrari.jpg';
 import heroBg from '@/assets/luxury-dashboard-bg.jpg';
+import BookView from './BookView.vue';
+import { AuthService } from '@/services/authService'; 
 
+const showBookingPopup = ref(false);
+const selectedCar = ref<Vehicle | null>(null);
+
+const openBookingPopup = (car: any) => {
+    if (!AuthService.hasAuth()) {
+    alert('You must register to book your dream car.');
+    return;
+  }
+  selectedCar.value = car;
+  showBookingPopup.value = true;
+};
+
+const closeBookingPopup = () => {
+  showBookingPopup.value = false;
+};
 const stats = ref([
   { label: 'Total Bookings', value: '120+', icon: '📅' },
   { label: 'Available Cars', value: '15+', icon: '🚗' },
@@ -68,16 +85,18 @@ const featuredCars = ref([
           <div class="car-details">
             <h3>{{ car.name }}</h3>
             <p class="specs">{{ car.specs }}</p>
-            <button class="book-button">Book Now</button>
+            <button class="book-button" @click="openBookingPopup(car)">Book Now</button>
           </div>
         </article>
       </div>
     </section>
+    
   </div>
+  <BookView v-if="showBookingPopup" :car="selectedCar" @close="closeBookingPopup" />
 </template>
 
 <style scoped>
-/* Base Styles */
+/ Base Styles /
 .dashboard {
   font-family: 'Poppins', sans-serif;
   color: #2d3436;
@@ -86,7 +105,7 @@ const featuredCars = ref([
   padding: 0 20px;
 }
 
-/* Hero Section */
+/ Hero Section /
 .hero {
   height: 500px;
   background-size: cover;
@@ -150,7 +169,7 @@ const featuredCars = ref([
   box-shadow: 0 4px 12px rgba(0,0,0,0.2);
 }
 
-/* Stats Section */
+/ Stats Section /
 .stats-section {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
@@ -189,7 +208,7 @@ const featuredCars = ref([
   font-size: 1rem;
 }
 
-/* Featured Cars Section */
+/ Featured Cars Section /
 .section-header {
   text-align: center;
   margin-bottom: 40px;
@@ -288,7 +307,7 @@ const featuredCars = ref([
   background: #6c29b9;
 }
 
-/* Responsive Adjustments */
+/ Responsive Adjustments /
 @media (max-width: 768px) {
   .hero h1 {
     font-size: 2.5rem;
