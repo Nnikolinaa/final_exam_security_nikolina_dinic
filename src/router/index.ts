@@ -15,47 +15,47 @@ const router = createRouter({
   routes: [
     {
       path: '/',
-      redirect: '/login', // Redirect root path to login
+      redirect: '/about', // Redirect root path to AboutView
     },
     {
       path: '/login',
       name: 'login',
       component: LoginView,
       meta: {
-        title: 'Login'
-      }
+        title: 'Login',
+      },
     },
     {
       path: '/signup',
       name: 'signup',
       component: SignUpView,
       meta: {
-        title: 'Signup'
-      }
+        title: 'Signup',
+        requiresAuth: false
+      },
     },
     {
       path: '/dashboard',
       name: 'dashboard',
       component: DashboardView,
-      meta: { requiresAuth: true },
+      meta: { requiresAuth: false },
     },
     {
       path: '/about',
       name: 'about',
       component: AboutView,
-      meta: { requiresAuth: true },
     },
     {
       path: '/fleet',
       name: 'fleet',
       component: FleetView,
-      meta: { requiresAuth: true },
+      meta: { requiresAuth: false },
     },
     {
       path: '/car/:id',
       name: 'car-details',
       component: CarDetailsView,
-      meta: { requiresAuth: true },
+      meta: { requiresAuth: false },
     },
     {
       path: '/profile',
@@ -72,11 +72,10 @@ const router = createRouter({
     {
       path: '/:catchAll(.*)',
       redirect: '/about',
-    }
+    },
   ],
   scrollBehavior(to, from, savedPosition) {
-    // Always scroll to the top of the page
-    return { top: 0 };
+    return { top: 0 }; // Always scroll to the top of the page
   },
 });
 
@@ -84,7 +83,7 @@ const router = createRouter({
 router.beforeEach((to, from, next) => {
   const isAuthenticated = AuthService.hasAuth(); // Use AuthService to check authentication
   if (to.meta.requiresAuth && !isAuthenticated) {
-    next({ name: 'login' }); // Redirect to login if not authenticated
+    next({ name: 'signup' }); // Redirect to signup if not authenticated
   } else {
     next();
   }
