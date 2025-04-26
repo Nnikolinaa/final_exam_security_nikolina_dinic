@@ -1,11 +1,13 @@
 import type { AuthModel } from "@/models/auth.model";
-
+import { ref } from "vue";
 export class AuthService {
     private static STORAGE_KEY = 'auth'
+    static isAuthenticated = ref(AuthService.hasAuth()); // Reactive state for authentication
 
     static createAuth(model: AuthModel) {
-        this.removeAuth()
-        localStorage.setItem(this.STORAGE_KEY, JSON.stringify(model))
+        this.removeAuth();
+        localStorage.setItem(this.STORAGE_KEY, JSON.stringify(model));
+        this.isAuthenticated.value = true; // Update reactive state
     }
 
     static getAuth() {
@@ -34,5 +36,6 @@ export class AuthService {
 
     static removeAuth() {
         localStorage.removeItem(this.STORAGE_KEY)
+        this.isAuthenticated.value = false;
     }
 }
