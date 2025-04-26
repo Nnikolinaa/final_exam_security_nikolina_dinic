@@ -26,20 +26,18 @@ export class MainService {
   static async useAxios<T>(
     url: string,
     method: 'get' | 'post' | 'put' | 'delete' = 'get',
-    data: any = {}
+    data: any = {},
+    requireAuth: boolean = true // Add a parameter to control authentication
   ): Promise<AxiosResponse<T, any>> {
     let rsp: AxiosResponse;
-
+  
     try {
-      const headers =
-        url === '/user/register' || url === '/user/login' // Exclude Authorization for public routes
-          ? {}
-          : {
-              'Authorization': `Bearer ${AuthService.getAccessToken()}`,
-            };
-
+      const headers = requireAuth
+        ? { 'Authorization': `Bearer ${AuthService.getAccessToken()}` }
+        : {}; // Skip Authorization header if `requireAuth` is false
+  
       rsp = await client.request<T>({
-        url: `/api${url}`, // Prepend `/api` to all paths
+        url: `/api${url}`,
         method: method,
         headers: headers,
         data: data,
@@ -47,17 +45,15 @@ export class MainService {
     } catch (e) {
       rsp = (e as AxiosError).response as AxiosResponse;
     }
-
+  
     if (rsp == undefined) {
       throw new Error('BACKEND_UNREACHABLE');
     }
-
+  
     if (rsp.status == 403) {
       console.warn('Access token expired. Attempting to refresh...');
-
       try {
         const refreshToken = AuthService.getRefreshToken();
-
         const tokenRequest = await client.request({
           url: '/api/user/refresh',
           method: 'post',
@@ -65,10 +61,9 @@ export class MainService {
             'Authorization': `Bearer ${refreshToken}`,
           },
         });
-
+  
         AuthService.createAuth(tokenRequest.data);
-
-        // Retry the original request with the new access token
+  
         rsp = await client.request<T>({
           url: `/api${url}`,
           method: method,
@@ -83,11 +78,11 @@ export class MainService {
         throw new Error('REFRESH_FAILED');
       }
     }
-
+  
     if (rsp.status == 404) {
       throw new Error('NOT_FOUND');
     }
-
+  
     return rsp;
   }
 }
