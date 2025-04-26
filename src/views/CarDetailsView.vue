@@ -5,6 +5,7 @@ import { MainService } from '@/services/mainService';
 import { useVehicleService } from '@/services/vehicleService'; // Import vehicleService
 import type { Vehicle } from '@/models/vehicle.model';
 import fallbackImage from '@/assets/mercedesAMGGTR.jpg';
+import { AuthService } from '@/services/authService'; 
 
 const route = useRoute();
 const carId = Number(route.params.id);
@@ -16,7 +17,7 @@ const totalPrice = computed(() => {
   if (startDate.value && endDate.value) {
     const start = new Date(startDate.value);
     const end = new Date(endDate.value);
-    const days = Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)) + 1;
+    const days = Math.ceil((end.getTime() - start.getTime()) / (1000  60  60 * 24)) + 1;
     return days > 0 ? days * parseInt(car.value?.price.replace(/[^0-9]/g, '') || '0') : 0;
   }
   return 0;
@@ -26,7 +27,7 @@ const { imageMap } = useVehicleService(); // Use imageMap from vehicleService
 
 const fetchCarDetails = async () => {
   try {
-    const response = await MainService.useAxios<Vehicle>(`/vehicles/${carId}`);
+    const response = await MainService.useAxios<Vehicle>(`/vehicles/${carId}`, 'get', {}, false);
     const vehicle = response.data;
 
     // Map the imagePath using imageMap
@@ -45,6 +46,13 @@ const isDateUnavailable = (date: string) => {
 };
 
 const bookNow = async () => {
+
+    // Check if the user is authenticated
+  if (!AuthService.hasAuth()) {
+    alert('You must register to book your dream car.');
+    return; // Stop further execution
+  }
+
   if (!startDate.value || !endDate.value || !car.value) {
     alert('Please select valid dates.');
     return;
