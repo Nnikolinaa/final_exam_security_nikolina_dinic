@@ -59,7 +59,7 @@ const normalizedImageMap: Record<string, string> = Object.fromEntries(
 
 const fetchVehicles = async () => {
   try {
-    const response = await MainService.useAxios<Vehicle[]>('/vehicles');
+        const response = await MainService.useAxios<Vehicle[]>('/vehicles', 'get', {}, false); 
     vehicles.value = response.data.map((vehicle) => ({
       ...vehicle,
       imagePath: normalizedImageMap[vehicle.imagePath.toLowerCase()] || fallbackImage, // Use normalized keys
